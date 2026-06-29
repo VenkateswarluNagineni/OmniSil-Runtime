@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omnisil-runtime"
+version = "0.1.0"
+description = "Multi-Silicon LLM Kernel & Serving Runtime supporting NVIDIA CUDA/Triton, AMD ROCm, and AWS Trainium"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "Venkateswarlu Nagineni", email = "venkates2002@tamu.edu" }
+]
+keywords = ["llm", "runtime", "triton", "cuda", "rocm", "trainium", "flashattention", "moe", "quantization"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "numpy>=1.22.0",
+]
+
+[project.optional-dependencies]
+torch = ["torch>=2.0.0"]
+test = ["pytest>=7.0.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["omnisil*"]

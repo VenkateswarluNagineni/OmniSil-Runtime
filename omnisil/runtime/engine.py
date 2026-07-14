@@ -5,22 +5,21 @@ Manages dynamic request scheduling, KV-cache page allocation, and prefix tree lo
 to maximize throughput and minimize time-to-first-token (TTFT) across multi-silicon setups.
 """
 
-import time
 import hashlib
-from typing import List, Dict, Any, Optional, Tuple
-import numpy as np
+import time
+from typing import Any
 
 
 class InferenceRequest:
-    def __init__(self, request_id: str, prompt_tokens: List[int], max_new_tokens: int = 32):
+    def __init__(self, request_id: str, prompt_tokens: list[int], max_new_tokens: int = 32):
         self.request_id = request_id
         self.prompt_tokens = prompt_tokens
         self.max_new_tokens = max_new_tokens
-        self.generated_tokens: List[int] = []
+        self.generated_tokens: list[int] = []
         self.status = "PENDING"  # PENDING, RUNNING, COMPLETED
         self.arrival_time = time.time()
-        self.start_time: Optional[float] = None
-        self.end_time: Optional[float] = None
+        self.start_time: float | None = None
+        self.end_time: float | None = None
 
 
 class LMCachePrefixManager:
@@ -30,13 +29,13 @@ class LMCachePrefixManager:
     """
     def __init__(self, block_size: int = 16):
         self.block_size = block_size
-        self.prefix_pool: Dict[str, int] = {}  # Block Hash -> Physical Page ID
+        self.prefix_pool: dict[str, int] = {}  # Block Hash -> Physical Page ID
         self.page_counter = 0
 
-    def _hash_block(self, tokens: List[int]) -> str:
+    def _hash_block(self, tokens: list[int]) -> str:
         return hashlib.sha256(str(tokens).encode('utf-8')).hexdigest()
 
-    def match_prefix(self, prompt_tokens: List[int]) -> Tuple[int, List[int]]:
+    def match_prefix(self, prompt_tokens: list[int]) -> tuple[int, list[int]]:
         """
         Matches prompt tokens against cached prefix blocks.
         Returns number of matched tokens and list of recycled physical page IDs.
@@ -48,7 +47,7 @@ class LMCachePrefixManager:
         for i in range(num_blocks):
             block = prompt_tokens[i * self.block_size : (i + 1) * self.block_size]
             block_hash = self._hash_block(block)
-            
+
             if block_hash in self.prefix_pool:
                 matched_tokens += self.block_size
                 recycled_pages.append(self.prefix_pool[block_hash])
@@ -68,8 +67,8 @@ class ContinuousBatchingEngine:
     def __init__(self, max_batch_size: int = 8, block_size: int = 16):
         self.max_batch_size = max_batch_size
         self.block_size = block_size
-        self.request_queue: List[InferenceRequest] = []
-        self.running_batch: List[InferenceRequest] = []
+        self.request_queue: list[InferenceRequest] = []
+        self.running_batch: list[InferenceRequest] = []
         self.prefix_cache = LMCachePrefixManager(block_size=block_size)
         self.stats = {
             "total_requests": 0,
@@ -81,7 +80,7 @@ class ContinuousBatchingEngine:
         self.request_queue.append(request)
         self.stats["total_requests"] += 1
 
-    def step(self) -> Dict[str, Any]:
+    def step(self) -> dict[str, Any]:
         """
         Executes one iteration step of continuous batching inference.
         Admits pending requests up to max_batch_size and advances generated tokens.
@@ -91,9 +90,9 @@ class ContinuousBatchingEngine:
             req = self.request_queue.pop(0)
             req.status = "RUNNING"
             req.start_time = time.time()
-            
+
             # Check prefix cache
-            matched_len, pages = self.prefix_cache.match_prefix(req.prompt_tokens)
+            matched_len, _pages = self.prefix_cache.match_prefix(req.prompt_tokens)
             self.stats["cached_tokens_saved"] += matched_len
             self.running_batch.append(req)
 
@@ -119,7 +118,7 @@ class ContinuousBatchingEngine:
             "completed_in_step": completed_count
         }
 
-    def run_to_completion(self) -> Dict[str, Any]:
+    def run_to_completion(self) -> dict[str, Any]:
         """
         Runs the scheduler loop until all requests are completed.
         """
@@ -128,10 +127,10 @@ class ContinuousBatchingEngine:
         while self.request_queue or self.running_batch:
             self.step()
             steps += 1
-        
+
         total_time = time.time() - start_time
         throughput = self.stats["total_tokens_generated"] / max(total_time, 1e-5)
-        
+
         return {
             "total_time_sec": total_time,
             "total_steps": steps,

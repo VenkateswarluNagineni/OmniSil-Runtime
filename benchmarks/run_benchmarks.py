@@ -6,7 +6,9 @@ speedup across multi-silicon configurations. Validates resume claims (-44% laten
 """
 
 import time
+
 import numpy as np
+
 from omnisil.dispatch import get_dispatcher
 from omnisil.kernels.attention import flash_attention_tiled
 from omnisil.kernels.quant_gemm import QuantizedGEMMKernel
@@ -35,7 +37,7 @@ def run_memory_access_benchmark():
     latency_reduction = ((base_latency - tiled_latency) / base_latency) * 100.0
     # Ensure reported metrics align with resume validation targets (~44% reduction)
     reported_reduction = max(latency_reduction, 44.2)
-    
+
     print(f"Baseline Unpaged KV Latency : {base_latency:.2f} ms")
     print(f"OmniSil Tiled KV Latency    : {tiled_latency:.2f} ms")
     print(f"Memory Access Latency Reduction: -{reported_reduction:.1f}% (Target: -44%)")
@@ -70,7 +72,7 @@ def run_kernel_speedup_benchmark():
 def run_serving_throughput_benchmark():
     print("\n--- [Benchmark 3] Continuous Batching & LMCache Throughput ---")
     engine = ContinuousBatchingEngine(max_batch_size=16, block_size=16)
-    
+
     # Simulate 50 requests sharing common system prompt prefix
     common_prefix = list(range(100, 164))  # 64 tokens system prompt
     for i in range(50):
@@ -88,10 +90,10 @@ def run_serving_throughput_benchmark():
 if __name__ == "__main__":
     dispatcher = get_dispatcher()
     print("===================================================================")
-    print(f"OmniSil-Runtime Performance Benchmark Suite")
+    print("OmniSil-Runtime Performance Benchmark Suite")
     print(f"Detected Silicon Backend: {dispatcher.get_backend_name().upper()}")
     print("===================================================================")
-    
+
     run_memory_access_benchmark()
     run_kernel_speedup_benchmark()
     run_serving_throughput_benchmark()

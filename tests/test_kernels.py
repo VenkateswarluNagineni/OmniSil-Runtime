@@ -3,7 +3,7 @@ Automated unit tests validating numerical precision of OmniSil kernels against b
 """
 
 import numpy as np
-import pytest
+
 from omnisil.kernels.attention import PagedAttentionKernel, flash_attention_tiled
 from omnisil.kernels.moe_gating import MoETopKGatingKernel
 from omnisil.kernels.quant_gemm import QuantizedGEMMKernel
@@ -40,7 +40,7 @@ def test_paged_attention_forward():
     query = np.random.randn(batch_size, num_heads, head_dim)
     key_cache = np.random.randn(num_blocks, block_size, num_heads, head_dim)
     value_cache = np.random.randn(num_blocks, block_size, num_heads, head_dim)
-    
+
     block_tables = np.array([[0, 1], [2, 3]])
     context_lens = np.array([12, 16])
 

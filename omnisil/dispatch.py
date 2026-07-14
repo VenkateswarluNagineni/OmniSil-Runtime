@@ -6,11 +6,11 @@ and routes kernel execution to the optimal hardware-accelerated backend or high-
 vectorized fallback.
 """
 
+import logging
 import os
 import platform
-import logging
 from enum import Enum
-from typing import Dict, Any, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger("OmniSil.Dispatch")
 
@@ -30,7 +30,7 @@ class HardwareDispatcher:
 
     def __init__(self):
         self.backend: SiliconBackend = self._detect_backend()
-        self.device_info: Dict[str, Any] = self._get_device_info()
+        self.device_info: dict[str, Any] = self._get_device_info()
 
     @classmethod
     def get_instance(cls) -> 'HardwareDispatcher':
@@ -73,7 +73,7 @@ class HardwareDispatcher:
         logger.info("Defaulting to Vectorized CPU silicon backend for high-precision local execution")
         return SiliconBackend.VECTORIZED_CPU
 
-    def _get_device_info(self) -> Dict[str, Any]:
+    def _get_device_info(self) -> dict[str, Any]:
         info = {
             "os": platform.system(),
             "architecture": platform.machine(),

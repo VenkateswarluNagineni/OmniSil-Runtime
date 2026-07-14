@@ -7,11 +7,11 @@ and maximize memory bandwidth utilization across heterogeneous silicon.
 """
 
 import math
-from typing import Tuple, Optional, Dict, Any
+
 import numpy as np
 
 try:
-    import torch
+    import torch  # noqa: F401
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -32,7 +32,7 @@ class PagedAttentionKernel:
         value_cache: np.ndarray,    # Shape: [num_blocks, block_size, num_heads, head_dim]
         block_tables: np.ndarray,   # Shape: [batch_size, max_num_blocks_per_seq]
         context_lens: np.ndarray,   # Shape: [batch_size]
-        scale: Optional[float] = None
+        scale: float | None = None
     ) -> np.ndarray:
         """
         Executes PagedAttention forward pass using tiled memory access.
@@ -68,7 +68,7 @@ class PagedAttentionKernel:
 
             # Scaled dot-product attention per head
             scores = np.matmul(q_b, k_b) * scale              # [num_heads, 1, ctx_len]
-            
+
             # Stable numerical softmax
             scores_max = np.max(scores, axis=-1, keepdims=True)
             exp_scores = np.exp(scores - scores_max)
@@ -95,9 +95,7 @@ def flash_attention_tiled(
     batch_size, num_heads, seq_len, head_dim = q.shape
     scale = 1.0 / math.sqrt(head_dim)
 
-    O = np.zeros_like(q)
-    L = np.zeros((batch_size, num_heads, seq_len, 1))
-    M = np.full((batch_size, num_heads, seq_len, 1), -np.inf)
+    out_tensor = np.zeros_like(q)
 
     # Outer loop over sequence tiles
     for i in range(0, seq_len, tile_size_q):
@@ -126,6 +124,6 @@ def flash_attention_tiled(
             Li = Li * alpha + lij
             Mi = mij
 
-        O[:, :, i:i_end, :] = Oi / Li
+        out_tensor[:, :, i:i_end, :] = Oi / Li
 
-    return O
+    return out_tensor

@@ -5,7 +5,6 @@ Implements weight-only and dynamic activation quantization scaling factors
 to maximize arithmetic intensity and bandwidth throughput on hardware accelerators.
 """
 
-from typing import Tuple, Optional
 import numpy as np
 
 
@@ -15,7 +14,7 @@ class QuantizedGEMMKernel:
     Supports symmetric INT4 and simulated FP8 quantization scaling.
     """
     @staticmethod
-    def quantize_int4_symmetric(weights: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def quantize_int4_symmetric(weights: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         Quantizes FP32/FP16 weight matrix into packed INT4 representation with per-channel scales.
         Weights shape: [out_features, in_features]
@@ -24,15 +23,16 @@ class QuantizedGEMMKernel:
             scales: Per-channel scale factors [out_features, 1]
         """
         out_features, in_features = weights.shape
-        assert in_features % 2 == 0, "Input features must be even for INT4 packing"
+        if in_features % 2 != 0:
+            raise ValueError("Input features must be even for INT4 packing")
 
         # Find absolute max per output channel
         abs_max = np.max(np.abs(weights), axis=1, keepdims=True)
         abs_max = np.maximum(abs_max, 1e-9)
-        
+
         # INT4 range is [-8, 7]
         scales = abs_max / 7.0
-        
+
         # Quantize and clip
         q_weights = np.round(weights / scales)
         q_weights = np.clip(q_weights, -8, 7).astype(np.int8)
@@ -54,7 +54,7 @@ class QuantizedGEMMKernel:
         in_features = packed_cols * 2
 
         unpacked = np.zeros((out_features, in_features), dtype=np.int8)
-        
+
         # Extract lower and upper nibbles
         lower = packed_weights & 0x0F
         upper = (packed_weights >> 4) & 0x0F
@@ -78,7 +78,7 @@ class QuantizedGEMMKernel:
         return np.matmul(activations, w_fp32.T)
 
     @staticmethod
-    def simulate_fp8_gemm(activations: np.ndarray, weights: np.ndarray) -> Tuple[np.ndarray, float]:
+    def simulate_fp8_gemm(activations: np.ndarray, weights: np.ndarray) -> tuple[np.ndarray, float]:
         """
         Simulates E4M3 FP8 dynamic quantization GEMM with scaling factor tracking.
         """

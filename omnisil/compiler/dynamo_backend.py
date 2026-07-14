@@ -7,14 +7,16 @@ global memory roundtrips and kernel launch overheads.
 """
 
 import logging
-from typing import Any, Dict, Callable
+from collections.abc import Callable
+from typing import Any
+
 import numpy as np
 
 logger = logging.getLogger("OmniSil.Compiler")
 
 try:
-    import torch
-    import torch.fx as fx
+    import torch  # noqa: F401
+    import torch.fx as fx  # noqa: F401
     TORCH_FX_AVAILABLE = True
 except ImportError:
     TORCH_FX_AVAILABLE = False
@@ -39,12 +41,12 @@ class FusionPass:
         # RMSNorm calculation
         variance = np.mean(x ** 2, axis=-1, keepdims=True)
         normed_x = x * (1.0 / np.sqrt(variance + eps)) * norm_weight
-        
+
         # Fused Linear Projection
         return np.matmul(normed_x, proj_weight.T)
 
 
-def omnisil_dynamo_backend(gm: Any, sample_inputs: Any) -> Callable:
+def omnisil_dynamo_backend(gm: Any, _sample_inputs: Any) -> Callable:
     """
     Torch Dynamo backend compiler hook. Inspects FX graph and substitutes separated
     operators with fused kernel calls.

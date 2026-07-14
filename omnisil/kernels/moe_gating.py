@@ -5,7 +5,6 @@ Implements token routing dispatch to specialized expert feeds, load-balancing ca
 and router z-loss regularization to prevent routing collapse in sparse distributed transformers.
 """
 
-from typing import Tuple, Dict, Any
 import numpy as np
 
 
@@ -22,7 +21,7 @@ class MoETopKGatingKernel:
     def route_tokens(
         self,
         router_logits: np.ndarray  # Shape: [num_tokens, num_experts]
-    ) -> Tuple[np.ndarray, np.ndarray, Dict[str, float]]:
+    ) -> tuple[np.ndarray, np.ndarray, dict[str, float]]:
         """
         Routes tokens to top-k experts and computes load balancing stats.
         Returns:
@@ -31,7 +30,8 @@ class MoETopKGatingKernel:
             metrics: Dict containing load variance and z-loss penalties
         """
         num_tokens, num_exp = router_logits.shape
-        assert num_exp == self.num_experts, f"Expected {self.num_experts} experts, got {num_exp}"
+        if num_exp != self.num_experts:
+            raise ValueError(f"Expected {self.num_experts} experts, got {num_exp}")
 
         # Numerical stabilization and softmax over experts
         logits_max = np.max(router_logits, axis=-1, keepdims=True)
